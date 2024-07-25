@@ -4,7 +4,7 @@ EXTENDS Integers, Sequences, FiniteSets
 VARIABLES p, q, n, phi, e, d, m, c, message, ciphertext, plaintext
 
 (* Definicija prostih brojeva u ograničenom opsegu *)
-Prime == {x \in 2..10000 : \A y \in 2..(x-1) : x % y /= 0}
+Prime == {x \in 2..18 : \A y \in 2..(x-1) : x % y /= 0}
 
 (* Definicija pomoćne funkcije za modularnu eksponencijaciju *)
 ModExpHelper(base, half_exp, mod, half_result) ==
@@ -50,14 +50,15 @@ Next ==
 
 (* Inicijalno stanje *)
 Init ==
-  /\ p = 3
-  /\ q = 11
+  /\ p \in Prime
+  /\ q \in Prime
   /\ p /= q
   /\ n = p * q
   /\ phi = (p - 1) * (q - 1)
-  /\ e = 7
-  /\ m = 5
+  /\ e \in 1..(phi-1)
+  /\ \E x \in 1..(phi-1) : (e * x) % phi = 1
   /\ d = CHOOSE x \in 1..(phi-1) : (e * x) % phi = 1
+  /\ m \in 1..(n-1)
   /\ c = ModExp(m, e, n)
   /\ plaintext = ModExp(c, d, n)
   /\ ciphertext = c
