@@ -1,9 +1,9 @@
 ----------------------------- MODULE ecc -----------------------------
 EXTENDS Integers, Sequences, TLC
 
-p == 23
-a == 1
-b == 1
+p == 203
+a == 5
+b == 13
 Gx == 4
 Gy == 5
 n == 19
@@ -95,6 +95,7 @@ Init ==
     /\ R = <<0, 0>>
     /\ validPoint = ValidPoint(Gx, Gy)
     /\ scalar = 17
+
 
 Next ==
     \/ \E M \in {<<x, y>>}: ValidPoint(x, y) /\ P' = M

@@ -78,6 +78,9 @@ SBox8 == << <<13, 2, 8, 4, 6, 15, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7>>,
 Permute(bitSeq, perm) ==
     [i \in 1..Len(perm) |-> bitSeq[perm[i]]]
 
+FinalPermutation(s) ==
+    Permute(s[1] \o s[2], FP)
+
 GenerateRoundKey(k, r) ==
     [i \in 1..Len(k) |-> k[((i + r - 1) % Len(k)) + 1]]
 
@@ -125,11 +128,11 @@ DESProcess(e, s, k, r) ==
 
 NextRound ==
     /\ round < Nr
-    /\ state' = DESProcess(encrypt, state, roundKey, round)
     /\ roundKey' = roundKey
     /\ Nr' = Nr
     /\ round' = round + 1
     /\ encrypt' = encrypt
+    /\ IF round' = Nr + 1 THEN state' = FinalPermutation(state') ELSE state' = DESProcess(encrypt, state, roundKey, round)
 
 Init ==
     /\ state = << [i \in 1..32 |-> 0], [i \in 1..32 |-> 1] >>
@@ -142,5 +145,4 @@ Init ==
 Spec ==
     Init /\ [][NextRound]_<<state, round, roundKey, Nr, encrypt>>
 
-====
-
+============================ END MODULE ============================

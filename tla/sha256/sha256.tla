@@ -14,7 +14,7 @@ H0 == 19
 
 Divide(x, y) == x \div y
 
-ModAdd(x, y) == ((x + y) % (2^8))   \* Updated to 32-bit for SHA-256
+ModAdd(x, y) == ((x + y) % (2^8))
 ModSub(x, y) == ((x - y) % (2^8))
 ModMul(x, y) == ((x * y) % (2^8))
 

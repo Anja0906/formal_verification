@@ -13,7 +13,7 @@ ModMul(x, y) == ((x * y) % (2^8))
 
 Xor(x, y) == ModSub(ModAdd(x, y), ModMul(2, ModMul(x, y)))
 
-LeftRotate(x, c) == ModAdd(((x * (2^c)) % (2^16)), ((x \div (2^(16 - c))) % (2^16)))
+LeftRotate(x, c) == ModAdd(((x * (2^c)) % (2^32)), ((x \div (2^(32 - c))) % (2^32)))
 
 F1A(N, P, Q) == ModSub(ModAdd(N, ModSub(ModAdd(P, Q), ModMul(P, Q))), ModMul(N, ModSub(ModAdd(P, Q), ModMul(P, Q))))
 F2A(N, P, Q) == ModAdd(ModMul(N, P), ModMul(ModSub(1, N), Q))
