@@ -1,9 +1,7 @@
 ------------------------------ MODULE ripemd160 ------------------------------
-EXTENDS Integers, Sequences, TLC, Reals
+EXTENDS Reals, Sequences, TLC, Reals, Bitwise
 
 VARIABLES A, B, C, D, E, AA, BB, CC, DD, EE, digest, Message
-
-Divide(x, y) == x \div y
 
 ModAdd(x, y) == ((x + y) % (2^8))
 
@@ -11,9 +9,15 @@ ModSub(x, y) == ((x - y) % (2^8))
 
 ModMul(x, y) == ((x * y) % (2^8))
 
-Xor(x, y) == ModSub(ModAdd(x, y), ModMul(2, ModMul(x, y)))
+RECURSIVE shiftL(_,_)
+shiftL(n,pos) == 
+    IF pos = 0 
+    THEN n
+    ELSE LET double(z) == 2 * z
+         IN shiftL(double(n), pos - 1)
 
-LeftRotate(x, c) == ModAdd(((x * (2^c)) % (2^32)), ((x \div (2^(32 - c))) % (2^32)))
+LeftRotate(x, c) == 
+    (shiftL(x, c) | shiftR(x, 32 - c)) % (2^32)
 
 F1A(N, P, Q) == ModSub(ModAdd(N, ModSub(ModAdd(P, Q), ModMul(P, Q))), ModMul(N, ModSub(ModAdd(P, Q), ModMul(P, Q))))
 F2A(N, P, Q) == ModAdd(ModMul(N, P), ModMul(ModSub(1, N), Q))
@@ -85,12 +89,12 @@ ProcessChunk(chunk) ==
               resultA == F(B, C, D, TRUE, round) % (2^8)
               resultB == F(BB, CC, DD, FALSE, round) % (2^8)
             IN
-              /\ A' = LeftRotate(Xor((E + resultA), K1), S1[i]) % (2^8)
+              /\ A' = LeftRotate(((E + resultA) ^^ K1), S1[i]) % (2^8)
               /\ E' = D % (2^8)
               /\ D' = LeftRotate(C, 10) % (2^8)
               /\ C' = B % (2^8)
               /\ B' = A % (2^8)
-              /\ AA' = LeftRotate(Xor((EE + resultB), K2), S2[i]) % (2^8)
+              /\ AA' = LeftRotate(((EE + resultB) ^^ K2), S2[i]) % (2^8)
               /\ EE' = DD % (2^8)
               /\ DD' = LeftRotate(CC, 10) % (2^8)
               /\ CC' = BB % (2^8)
@@ -129,7 +133,7 @@ FinalCombine ==
 
 Next == 
     \/ Preprocess
-    \/ \E chunk \in 1..Divide(Len(Message), 512) : ProcessChunk(chunk)
+    \/ \E chunk \in 1..(Len(Message) \div 512) : ProcessChunk(chunk)
     \/ FinalCombine
 
 

@@ -1,5 +1,5 @@
 ---- MODULE aes ----
-EXTENDS Naturals, Sequences, Integers
+EXTENDS Naturals, Sequences, Integers, Bitwise
 
 VARIABLES state, roundKey, round, Nb, Nk, Nr, encrypt
 
@@ -24,8 +24,6 @@ SBox == <<
 
 Rcon == <<1, 2, 4, 8, 16, 32, 64, 128, 27, 54>>
 
-Xor(a, b) == (((a + b) % 256) - ((2 * ((a * b) % 256)) % 256)) % 256
-
 RotWord(word) == <<word[2], word[3], word[4], word[1]>>
 
 SubWord(word) == <<SBox[(word[1] % 16) + 1][(word[1] % 16) + 1],
@@ -41,23 +39,21 @@ KeyExpansion(initialKey, i) ==
             temp == KeyExpansion(initialKey, i - 1)
             rconVal == <<Rcon[(i \div 4)], 0, 0, 0>>
             subRotWord == SubWord(RotWord(temp))
-        IN [j \in 1..4 |-> Xor(prevKey[j], Xor(subRotWord[j], rconVal[j]))]
+        IN [j \in 1..4 |-> Xor(prevKey[j], Xor(subRotWord[j], rconVal[j], 0, subRotWord[j]), 0, prevKey[j])]
     ELSE 
         LET prevKey == KeyExpansion(initialKey, i - 4)
             temp == KeyExpansion(initialKey, i - 1)
-        IN [j \in 1..4 |-> Xor(prevKey[j], temp[j])]
-
-
+        IN [j \in 1..4 |-> Xor(prevKey[j], temp[j], 0, prevKey[j])]
 
 RECURSIVE GFMul(_, _)
 GFMul(a, b) ==
     LET temp == IF b = 1 THEN a
-                ELSE IF b = 2 THEN IF (a * 2) >= 256 THEN Xor((a * 2) % 256, 27) ELSE (a * 2)
-                ELSE IF b = 3 THEN Xor(GFMul(a, 2), a)
-                ELSE IF b = 9 THEN Xor(GFMul(GFMul(GFMul(a, 2), 2), 2), a)
-                ELSE IF b = 11 THEN Xor(Xor(GFMul(GFMul(GFMul(a, 2), 2), 2), GFMul(a, 2)), a)
-                ELSE IF b = 13 THEN Xor(Xor(GFMul(GFMul(GFMul(a, 2), 2), 2), GFMul(GFMul(a, 2), 2)), a)
-                ELSE IF b = 14 THEN Xor(GFMul(GFMul(GFMul(a, 2), 2), 2), GFMul(GFMul(a, 2), 2))
+                ELSE IF b = 2 THEN IF (a * 2) >= 256 THEN Xor((a * 2) % 256, 27, 0, (a * 2) % 256) ELSE (a * 2)
+                ELSE IF b = 3 THEN Xor(GFMul(a, 2), a, 0, GFMul(a, 2))
+                ELSE IF b = 9 THEN Xor(GFMul(GFMul(GFMul(a, 2), 2), 2), a, 0, GFMul(GFMul(GFMul(a, 2), 2), 2))
+                ELSE IF b = 11 THEN Xor(Xor(GFMul(GFMul(GFMul(a, 2), 2), 2), GFMul(a, 2), 0, GFMul(GFMul(GFMul(a, 2), 2), 2)), a, 0, Xor(GFMul(GFMul(GFMul(a, 2), 2), 2), GFMul(a, 2), 0, GFMul(GFMul(GFMul(a, 2), 2), 2)))
+                ELSE IF b = 13 THEN Xor(Xor(GFMul(GFMul(GFMul(a, 2), 2), 2), GFMul(GFMul(a, 2), 2), 0, GFMul(GFMul(GFMul(a, 2), 2), 2)), a, 0, Xor(GFMul(GFMul(GFMul(a, 2), 2), 2), GFMul(GFMul(a, 2), 2), 0, GFMul(GFMul(GFMul(a, 2), 2), 2)))
+                ELSE IF b = 14 THEN Xor(GFMul(GFMul(GFMul(a, 2), 2), 2), GFMul(GFMul(a, 2), 2), 0, GFMul(GFMul(GFMul(a, 2), 2), 2))
                 ELSE 0
     IN temp
 
@@ -81,10 +77,10 @@ MixColumns(s) ==
             s2 == s[3][i]
             s3 == s[4][i]
         IN [j \in 1..Nb |-> 
-            IF j = 1 THEN Xor(Xor(Xor(GFMul(s0, 2), GFMul(s1, 3)), s2), s3) % 256
-            ELSE IF j = 2 THEN Xor(Xor(Xor(s0, GFMul(s1, 2)), GFMul(s2, 3)), s3) % 256
-            ELSE IF j = 3 THEN Xor(Xor(Xor(s0, s1), GFMul(s2, 2)), GFMul(s3, 3)) % 256
-            ELSE Xor(Xor(Xor(GFMul(s0, 3), s1), s2), GFMul(s3, 2)) % 256]]
+            IF j = 1 THEN Xor(Xor(Xor(GFMul(s0, 2), GFMul(s1, 3), 0, GFMul(s0, 2)), s2, 0, GFMul(s0, 2)), s3, 0, GFMul(s0, 2)) % 256
+            ELSE IF j = 2 THEN Xor(Xor(Xor(s0, GFMul(s1, 2), 0, s0), GFMul(s2, 3), 0, s0), s3, 0, s0) % 256
+            ELSE IF j = 3 THEN Xor(Xor(Xor(s0, s1, 0, s0), GFMul(s2, 2), 0, s0), GFMul(s3, 3), 0, s0) % 256
+            ELSE Xor(Xor(Xor(GFMul(s0, 3), s1, 0, GFMul(s0, 3)), s2, 0, GFMul(s0, 3)), GFMul(s3, 2), 0, GFMul(s0, 3)) % 256]]
 
 InvMixColumns(s) ==
     [i \in 1..Nk |-> 
@@ -93,13 +89,13 @@ InvMixColumns(s) ==
             s2 == s[3][i]
             s3 == s[4][i]
         IN [j \in 1..Nb |-> 
-            IF j = 1 THEN Xor(Xor(Xor(GFMul(s0, 14), GFMul(s1, 11)), GFMul(s2, 13)), GFMul(s3, 9)) % 256
-            ELSE IF j = 2 THEN Xor(Xor(Xor(GFMul(s0, 9), GFMul(s1, 14)), GFMul(s2, 11)), GFMul(s3, 13)) % 256
-            ELSE IF j = 3 THEN Xor(Xor(Xor(GFMul(s0, 13), GFMul(s1, 9)), GFMul(s2, 14)), GFMul(s3, 11)) % 256
-            ELSE Xor(Xor(Xor(GFMul(s0, 11), s1), s2), GFMul(s3, 14)) % 256]]
+            IF j = 1 THEN Xor(Xor(Xor(GFMul(s0, 14), GFMul(s1, 11), 0, GFMul(s0, 14)), GFMul(s2, 13), 0, GFMul(s0, 14)), GFMul(s3, 9), 0, GFMul(s0, 14)) % 256
+            ELSE IF j = 2 THEN Xor(Xor(Xor(GFMul(s0, 9), GFMul(s1, 14), 0, GFMul(s0, 9)), GFMul(s2, 11), 0, GFMul(s0, 9)), GFMul(s3, 13), 0, GFMul(s0, 9)) % 256
+            ELSE IF j = 3 THEN Xor(Xor(Xor(GFMul(s0, 13), GFMul(s1, 9), 0, GFMul(s0, 13)), GFMul(s2, 14), 0, GFMul(s0, 13)), GFMul(s3, 11), 0, GFMul(s0, 13)) % 256
+            ELSE Xor(Xor(Xor(GFMul(s0, 11), GFMul(s1, 13), 0, GFMul(s0, 11)), GFMul(s2, 9), 0, GFMul(s0, 11)), GFMul(s3, 14), 0, GFMul(s0, 11)) % 256]]
 
 AddRoundKey(s, k) ==
-    [i \in 1..Nb |-> [j \in 1..Nk |-> Xor(s[i][j], k[i][j])]]
+    [i \in 1..Nb |-> [j \in 1..Nk |-> Xor(s[i][j], k[i][j], 0, s[i][j])]]
 
 Round(s, k) ==
     LET newState == MixColumns(ShiftRows(SubBytes(s)))

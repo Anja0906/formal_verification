@@ -3,7 +3,7 @@ EXTENDS Integers, Sequences, FiniteSets
 
 VARIABLES p, q, g, k, r, x, y, s, w, u1, u2, v, hashM, signature, verified
 
-Prime == {a \in 70..100 : \A b \in 2..(a-1) : a % b /= 0}
+Prime == {a \in 1..20 : \A b \in 2..(a-1) : a % b /= 0}
 
 ModExpHelper(base, half_exp, mod, half_result) ==
   (half_result * half_result) % mod
@@ -53,7 +53,7 @@ Init ==
   /\ p \in Prime
   /\ q \in Prime
   /\ p /= q
-  /\ g \in 2..(p-1)
+  /\ g \in 1..(q-1)
   /\ x \in 1..(q-1)
   /\ k \in 1..(q-1)
   /\ hashM \in 1..(q-1)

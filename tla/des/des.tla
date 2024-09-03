@@ -1,5 +1,5 @@
 ---- MODULE des ----
-EXTENDS Naturals, Sequences, Integers
+EXTENDS Naturals, Sequences, Integers, Bitwise
 
 VARIABLES state, roundKey, round, Nr, encrypt
 
@@ -90,7 +90,7 @@ AccessSBox(SBox, Row, Col) ==
 F(R, K) ==
     LET 
         E_R == Permute(R, E)
-        XOR_Result == [i \in 1..48 |-> (E_R[i] + K[i]) % 2]
+        XOR_Result == [i \in 1..48 |-> E_R[i] ^^ K[i]]
         
         SBox_Output1 == AccessSBox(SBox1, (XOR_Result[1] * 2) + XOR_Result[6] + 1, ((XOR_Result[2] * 8) + (XOR_Result[3] * 4) + (XOR_Result[4] * 2) + XOR_Result[5]) + 1)
         SBox_Output2 == AccessSBox(SBox2, (XOR_Result[7] * 2) + XOR_Result[12] + 1, ((XOR_Result[8] * 8) + (XOR_Result[9] * 4) + (XOR_Result[10] * 2) + XOR_Result[11]) + 1)
@@ -135,11 +135,31 @@ NextRound ==
     /\ IF round' = Nr + 1 THEN state' = FinalPermutation(state') ELSE state' = DESProcess(encrypt, state, roundKey, round)
 
 Init ==
-    /\ state = << [i \in 1..32 |-> 0], [i \in 1..32 |-> 1] >>
-    /\ roundKey = [i \in 1..48 |-> 1]
+    LET
+        realKey == << 0, 0, 0, 1, 0, 0, 1, 1, 
+                     0, 0, 1, 1, 0, 1, 0, 0, 
+                     0, 1, 0, 1, 0, 1, 0, 1, 
+                     1, 0, 1, 1, 1, 1, 0, 0, 
+                     1, 1, 0, 0, 1, 1, 0, 1, 
+                     1, 1, 1, 1, 1, 0, 0, 0, 
+                     1, 1, 0, 1, 1, 1, 1, 1, 
+                     1, 1, 1, 1, 0, 0, 0, 1 >>
+                     
+        realState == << << 0, 0, 0, 0, 0, 0, 0, 1, 
+                       0, 0, 1, 0, 0, 0, 1, 1, 
+                       0, 1, 0, 0, 0, 1, 0, 1, 
+                       0, 1, 1, 0, 0, 1, 1, 1 >>, 
+                       << 1, 0, 0, 0, 1, 0, 0, 1, 
+                       1, 0, 1, 0, 1, 0, 1, 1, 
+                       1, 1, 0, 0, 1, 1, 0, 1, 
+                       1, 1, 1, 1, 0, 0, 0, 1 >> >>
+    IN
+    /\ state = realState
+    /\ roundKey = realKey
     /\ round = 0
     /\ Nr = 16 
     /\ encrypt = TRUE
+
 
 
 Spec ==

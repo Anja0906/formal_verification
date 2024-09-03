@@ -1,5 +1,5 @@
 ----------------------------- MODULE ecc -----------------------------
-EXTENDS Integers, Sequences, TLC
+EXTENDS Integers, Sequences, TLC, Bitwise
 
 p == 203
 a == 5
@@ -26,8 +26,13 @@ InverseMod(m, l) ==
                                 <<res[1], res[3], res[2] - (u \div v) * res[3]>>
         gcdRes == extendedGCD(m, l)
         gcd == gcdRes[1]
-        inv == gcdRes[2] % p
-    IN IF gcd = 1 THEN inv ELSE 0
+        inv == gcdRes[2] % l
+    IN 
+        IF gcd /= 1 THEN 
+            IF gcd = 0 THEN 0 ELSE <<0, "Error: gcd(m, l) is not 1">>
+        ELSE 
+            IF inv < 0 THEN inv + l ELSE inv
+
 
 PointAddition(J, K) ==
     LET
@@ -35,12 +40,28 @@ PointAddition(J, K) ==
         y1 == J[2]
         x2 == K[1]
         y2 == K[2]
-        slope == IF (x1 = x2) THEN (((3 * x1^2 + a) * InverseMod(2 * y1, p)) % p)
-                ELSE (y2 - y1) * InverseMod(x2 - x1, p) % p
+        isNeutral(A) == (A = <<0, 0>>)
+        slope == 
+            IF isNeutral(J) THEN 
+                <<x2, y2>>
+            ELSE IF isNeutral(K) THEN 
+                <<x1, y1>>
+            ELSE IF (x1 = x2) /\ (y1 = y2) THEN 
+                ((3 * x1^2 + a) * InverseMod(2 * y1, p)) % p
+            ELSE IF (x1 = x2) /\ (y1 /= y2) THEN 
+                <<0, 0>>
+            ELSE 
+                ((y2 - y1) * InverseMod(x2 - x1, p)) % p
     IN
-        /\ x' = (slope^2 - x1 - x2) % p
-        /\ y' = ((slope * (x1 - x')) - y1) % p
-        /\ R' = <<x', y'>>
+        IF (x1 = x2) /\ (y1 /= y2) THEN 
+            /\ x' = 0
+            /\ y' = 0
+            /\ R' = <<x', y'>>
+        ELSE
+            /\ x' = (slope^2 - x1 - x2) % p
+            /\ y' = ((slope * (x1 - x')) - y1) % p
+            /\ R' = <<x', y'>>
+
 
 RECURSIVE Bits(_)
 Bits(scal) ==
@@ -64,12 +85,14 @@ GeneratePublicKey(d_) ==
 
 GenerateSignature(z_, d_) ==
     LET
-        kVal == CHOOSE k_ \in 1..(n-1): TRUE
+        SecureRandomSet == {k_ \in 1..(n-1) : TRUE}  
+        kVal == CHOOSE k_ \in SecureRandomSet : TRUE
         Rval == ScalarMultiplication(kVal, G)
         rval == IF Rval[1] = 0 THEN 1 ELSE Rval[1] % n
         sval == ((z_ + rval * d_) * InverseMod(kVal, n)) % n
     IN
         <<rval, sval>>
+
 
 ValidateSignature(r_, s_, z_, Q_) ==
     LET
@@ -79,8 +102,8 @@ ValidateSignature(r_, s_, z_, Q_) ==
         X == PointAddition(ScalarMultiplication(u1, G), ScalarMultiplication(u2, Q_))
     IN
         /\ r_ = X[1] % n
-        /\ r_ # 0
-        /\ s_ # 0
+        /\ r_ /= 0
+        /\ s_ /= 0
 
 Init ==
     /\ x = Gx
