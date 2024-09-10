@@ -1,5 +1,5 @@
 ------------------------------ MODULE sha256 ------------------------------
-EXTENDS Integers, Sequences, TLC, Reals
+EXTENDS Integers, Sequences, TLC, Reals, Bitwise
 
 VARIABLES A, B, C, D, E, F, G, H, digest, Message, S0, S1
 
@@ -17,17 +17,15 @@ Divide(x, y) == x \div y
 ModAdd(x, y) == ((x + y) % (2^8))
 ModSub(x, y) == ((x - y) % (2^8))
 ModMul(x, y) == ((x * y) % (2^8))
+RightRotate(x, c) == shiftR(x, c) \div (2^(32 - c))
 
-Xor(x, y) == ModSub(ModAdd(x, y), ModMul(2, ModMul(x, y)))
 
-RightRotate(x, c) == ModAdd(((x \div (2^c)) % (2^8)), ((x * (2^(32 - c))) % (2^8)))
-
-Ch(x, y, z) == (x /\ y) \/ ((~x) /\ z)
-Maj(x, y, z) == (x /\ y) \/ (x /\ z) \/ (y /\ z)
-Sigma0(x) == Xor(Xor(RightRotate(x, 2), RightRotate(x, 13)), RightRotate(x, 22))
-Sigma1(x) == Xor(Xor(RightRotate(x, 6), RightRotate(x, 11)), RightRotate(x, 25))
-s0(x) == Xor(Xor(RightRotate(x, 7), RightRotate(x, 18)), (x \div (2^3)))
-s1(x) == Xor(Xor(RightRotate(x, 17), RightRotate(x, 19)), (x \div (2^10)))
+Ch(x, y, z) == (x & y) | ((Not(x)) & z)
+Maj(x, y, z) == (x & y) | (x & z) | (y & z)
+Sigma0(x) == (RightRotate(x, 2) ^^ RightRotate(x, 13)) ^^ RightRotate(x, 22)
+Sigma1(x) == (RightRotate(x, 6) ^^ RightRotate(x, 11)) ^^ RightRotate(x, 25)
+s0(x) == (RightRotate(x, 7) ^^ RightRotate(x, 18)) ^^ (x \div (2^3))
+s1(x) == (RightRotate(x, 17) ^^ RightRotate(x, 19)) ^^ (x \div (2^10))
 
 K == << 11, 19, 29, 37, 13, 23, 31, 41,
         17, 7, 47, 3, 43, 5, 2, 39,

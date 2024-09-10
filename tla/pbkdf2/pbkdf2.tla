@@ -1,5 +1,5 @@
 ----------------------------- MODULE pbkdf2 -----------------------------
-EXTENDS Integers, Sequences, TLC
+EXTENDS Integers, Sequences, TLC, Bitwise
 
 Password == <<32, 12, 45, 67, 78, 43, 21, 19>> 
 Salt == <<16, 12, 34, 45>>
@@ -13,24 +13,18 @@ HMAC(password, data) == data \o Password
 
 U1 == HMAC(Password, Append(Salt, BlockIndex))
 
-GenU(i, prevU) == HMAC(Password, prevU)
-
 ModAdd(x, y) == ((x + y) % (2^8))
 ModSub(x, y) == ((x - y) % (2^8))
 ModMul(x, y) == ((x * y) % (2^8))
-Xor(x, y) == ModSub(ModAdd(x, y), ModMul(2, ModMul(x, y)))
 
 Init ==
     /\ U = [i \in 1..Iterations |-> IF i = 1 THEN U1 ELSE <<>>]
     /\ F = U1
     /\ DerivedKey = <<>>
 
-GenNextU(i) ==
-    LET prevU == U[i-1]
-    IN U[i] = GenU(i, prevU)
+GenNextU(i) == U[i] = HMAC(Password, U[i-1])
 
-UpdateF(i) ==
-    F' = Xor(F, U[i])
+UpdateF(i) == F' = F ^^ U[i]
 
 FinalizeDerivedKey ==
     /\ DerivedKey' = Append(DerivedKey, F)

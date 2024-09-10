@@ -16,20 +16,19 @@ shiftL(n,pos) ==
     ELSE LET double(z) == 2 * z
          IN shiftL(double(n), pos - 1)
 
-LeftRotate(x, c) == 
-    (shiftL(x, c) | shiftR(x, 32 - c)) % (2^32)
+LeftRotate(x, c) == (shiftL(x, c) | shiftR(x, 32 - c)) % (2^32)
 
-F1A(N, P, Q) == ModSub(ModAdd(N, ModSub(ModAdd(P, Q), ModMul(P, Q))), ModMul(N, ModSub(ModAdd(P, Q), ModMul(P, Q))))
-F2A(N, P, Q) == ModAdd(ModMul(N, P), ModMul(ModSub(1, N), Q))
-F3A(N, P, Q) == ModSub(ModAdd(N, ModSub(ModAdd(P, ModSub(1, Q)), ModMul(P, ModSub(1, Q)))), ModMul(N, ModSub(ModAdd(P, ModSub(1, Q)), ModMul(P, ModSub(1, Q)))))
-F4A(N, P, Q) == ModAdd(ModMul(N, Q), ModMul(P, ModSub(1, Q)))
-F5A(N, P, Q) == ModSub(ModAdd(N, ModSub(ModAdd(P, ModSub(1, Q)), ModMul(P, ModSub(1, Q)))), ModMul(N, ModSub(ModAdd(P, ModSub(1, Q)), ModMul(P, ModSub(1, Q)))))
+F1A(N, P, Q) == ((P ^ Q) ^ N)
+F2A(N, P, Q) == ((N & P) | (~N & Q))
+F3A(N, P, Q) == ((N | ~P) ^ Q)
+F4A(N, P, Q) == ((N & Q) | (P & ~Q))
+F5A(N, P, Q) == (N ^ (P | ~Q))
 
-F1B(N, P, Q) == ModSub(ModAdd(N, ModSub(ModAdd(P, Q), ModMul(P, Q))), ModMul(N, ModSub(ModAdd(P, Q), ModMul(P, Q))))
-F2B(N, P, Q) == ModAdd(ModMul(N, Q), ModMul(P, ModSub(1, Q)))
-F3B(N, P, Q) == ModSub(ModAdd(ModAdd(N, ModSub(1, P)), Q), ModMul(ModAdd(N, ModSub(1, P)), Q))
-F4B(N, P, Q) == ModAdd(ModMul(N, P), ModMul(ModSub(1, N), Q))
-F5B(N, P, Q) == ModSub(ModAdd(N, ModSub(ModAdd(P, ModSub(1, Q)), ModMul(P, ModSub(1, Q)))), ModMul(N, ModSub(ModAdd(P, ModSub(1, Q)), ModMul(P, ModSub(1, Q)))))
+F1B(N, P, Q) == (P ^ (N | ~Q))
+F2B(N, P, Q) == ((N & Q) | (P & ~Q))
+F3B(N, P, Q) == ((N | ~P) ^ Q)
+F4B(N, P, Q) == ((N & P) | (~N & Q))
+F5B(N, P, Q) == ((P ^ Q) ^ N)
 
 K1A == 0
 K2A == 11
@@ -43,10 +42,11 @@ K4B == 37
 K5B == 0
 
 S1A == <<11, 14, 15, 12, 5, 8, 7, 9, 11, 13, 14, 15, 6, 7, 9, 8>>
-S2A == <<7, 4, 13, 1, 10, 6, 15, 3, 12, 0, 9, 5, 2, 14, 11, 8>>
-S3A == <<11, 13, 6, 7, 14, 9, 15, 8, 2, 0, 13, 11, 5, 14, 7, 13>>
-S4A == <<7, 5, 6, 8, 11, 14, 14, 6, 8, 13, 5, 14, 13, 6, 5, 12>>
-S5A == <<9, 15, 5, 11, 6, 8, 13, 12, 5, 7, 11, 12, 8, 15, 6, 5>>
+S2A == <<7, 6, 8, 13, 11, 9, 7, 15, 7, 12, 15, 9, 11, 7, 13, 12>>
+S3A == <<11, 13, 6, 7, 14, 9, 15, 8, 2, 12, 4, 13, 6, 8, 13, 15>>
+S4A == <<9, 13, 15, 7, 12, 8, 9, 11, 7, 7, 12, 7, 6, 15, 13, 11>>
+S5A == <<7, 5, 13, 11, 6, 7, 9, 5, 11, 12, 6, 13, 14, 7, 12, 7>>
+
 S1B == <<8, 9, 11, 13, 15, 7, 12, 8, 6, 4, 14, 15, 8, 11, 10, 7>>
 S2B == <<9, 13, 7, 15, 8, 14, 11, 2, 7, 1, 10, 13, 12, 5, 8, 9>>
 S3B == <<8, 12, 4, 9, 10, 0, 15, 5, 3, 14, 7, 14, 5, 6, 11, 13>>
